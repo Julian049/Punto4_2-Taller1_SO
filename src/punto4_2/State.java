@@ -1,5 +1,6 @@
 package punto4_2;
 
+//Estados por los que puede pasar el proceso
 public enum State {
     CREATED,
     READY,

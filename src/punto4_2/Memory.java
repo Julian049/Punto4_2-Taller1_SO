@@ -6,14 +6,14 @@ import java.util.ArrayList;
 public class Memory {
 
     /*
-    Se crean variables basicas para el funcionamiento del mismo tales como:
+    Se crean variables básicas para el funcionamiento del mismo tales como:
     totalKB -> Tamaño total de la memoria en KB
     frameKBSize -> Tamañol de los frames
-    numberFrames -> Cantidad de frames totales calculado diviendo el tamaño total entre el tamaño de los marcos
-    physicalAddress -> Numero que indica las direcciones fisicas para asignar a los slots de la memoria
-    logicalAddress -> Numero que indica las direcciones logicas para asignar a las paginas
+    numberFrames -> Cantidad de frames totales dividiendo el tamaño total entre el tamaño de los marcos
+    physicalAddress -> Número que indica las direcciones físicas para asignar a los slots de la memoria
+    logicalAddress -> Número que indica las direcciones lógicas para asignar a las páginas
     frames -> Arreglo de todos los marcos creados
-    pages -> Lista de paginas por asignar a marcos
+    pages -> Lista de páginas por asignar a marcos
     processes -> Lista de todos los procesos independientemente de su estado
      */
     private final int totalKBSize;
@@ -32,21 +32,21 @@ public class Memory {
         //Calculo del numero de frames totales de la memoria
         numberFrames = totalKBSize / frameKBSize;
 
-        //Instacia frames con un tamaño fijo de acuerdo a la cantidad de marcos
+        //Instancia frames con un tamaño fijo de acuerdo a la cantidad de marcos
         frames = new Frame[numberFrames];
 
-        //Inicio de direcciones fisicas y logicas
+        //Inicio de direcciones físicas y lógicas
         physicalAddress = 0;
         logicalAddress = 2000;
 
-        //Creacion de todos los marcos de la memoria
+        //Creación de todos los marcos de la memoria
         fillFrames();
     }
 
     /*
-    Se crean los marcos necesarios de acuerdo al numero total de marcos
-    Se crean con paginas nulas (aun no se aginan), se les asigna un numero y se les pasa el numero actual de direccion fisica
-    para que la memoria sepa en que direccion estan
+    Se crean los marcos necesarios de acuerdo al número total de marcos
+    Se crean con páginas nulas (aún no se asignan), se les asigna un número y se les pasa el número actual de dirección física
+    para que la memoria sepa en qué dirección están
      */
     private void fillFrames() {
         for (int i = 0; i < numberFrames; i++) {
@@ -56,6 +56,11 @@ public class Memory {
         }
     }
 
+    /*
+    Se asignan las páginas a un proceso, además pasa ha estado READY, ya está listo para entrar a la memoria y ser ejecutado
+    Se calcula la cantidad de páginas que le proceso va a tener redondeando hacia arriba, por ejemplo: 2.3 ≈ 3
+    Se les asigna un proceso a la página, un número de página y su dirección logica
+     */
     public void assignPageToProcess(Process process) {
         process.setState(State.READY);
         System.out.println("Estado actual del " + process.getName() + " " + process.getState());
@@ -72,7 +77,7 @@ public class Memory {
 
     public void runMemorySimulator() {
 
-        System.out.println("\n======SIMULACION======\n \n");
+        System.out.println("\n======SIMULACIÓN======\n \n");
 
         System.out.println("Espacio total de memoria " + totalKBSize + " Kb");
         System.out.println("Numero total de frames: " + numberFrames);
@@ -94,8 +99,8 @@ public class Memory {
         System.out.println("│   Liberamos el proceso 1    │");
         System.out.println("└─────────────────────────────┘");
 
-        recoverMemory(processes.get(0));
-        processes.get(0).setState(State.TERMINATED);
+        recoverMemory(processes.getFirst());
+        processes.getFirst().setState(State.TERMINATED);
 
         System.out.println("Frames disponibles: " + countFreeFrames());
         showMemory();
@@ -122,13 +127,14 @@ public class Memory {
 
         System.out.println("======ESTADOS DE LOS PROCESOS======== \n");
 
-        for (int i = 0; i < processes.size(); i++) {
-            System.out.println("Estado actual del " + processes.get(i).getName() + " " + processes.get(i).getState());
+        for (Process process : processes) {
+            System.out.println("Estado actual del " + process.getName() + " " + process.getState());
         }
 
-        mapDirections1();
+        mapDirections();
     }
 
+    //Retorna cuantos frames hay libres
     private int countFreeFrames() {
         int count = 0;
         for (int i = 0; i < numberFrames; i++) {
@@ -138,6 +144,10 @@ public class Memory {
         }
         return count;
     }
+
+    //Muestra el estado de la memoria, muestra todos los marcos junto con su estado en la memoria,
+    // en caso de que el marco este ocupado se muestra el proceso que lo esta ocupando y el estado del mismo
+    // al final muestra cuantos marcos quedaron libres después del llamado del método
 
     private void showMemory() {
         System.out.println("\n=== ESTADO DE LA MEMORIA ===");
@@ -175,7 +185,8 @@ public class Memory {
         System.out.println();
     }
 
-
+    //Cuando un proceso termina, el proceso sale de la memoria y por consecuente se libera la memoria que estaba usando
+    //Se deja disponible los marcos en los que estaba el proceso y se liberan las páginas
     private void recoverMemory(Process process) {
         for (int i = 0; i < numberFrames; i++) {
             if (!frames[i].isAvailable() && frames[i].getPage().getProcess() == process) {
@@ -185,19 +196,26 @@ public class Memory {
         }
     }
 
+    //Asigna los marcos a los procesos
+    //Busca desde el primer marco hasta el último aquellos que estén disponibles para asignar las páginas
     private void assignFrames(Process process) {
 
+        //Si el proceso es nulo se procede a asignar marcos para todas las páginas disponibles
+        // Porque esto solo pasa al inicio del programa cuando se crean varios procesos antes de lanzar el simulador
+        // Al final las páginas liberan porque ya están en la memoria principal
         if (process == null) {
             for (int i = 0; i < pages.size(); i++) {
                 if (frames[i].isAvailable()) {
                     frames[i].setPage(pages.get(i));
                     frames[i].setAvailable(false);
-                    System.out.println(frames[i].getPhysicalAddresses());
                 }
             }
             pages.clear();
         } else {
             assignPageToProcess(process);
+            //Si el número de páginas que necesita el proceso es mayor a los marcos disponibles,
+            // no se puede asignar el proceso a la memoria y queda en el estado esperando hasta que algún proceso termine la ejecución
+            // y pueda entrar
             if (pages.size() <= countFreeFrames()) {
                 for (int i = 0; i < pages.size(); i++) {
                     for (int j = 0; i < frames.length; j++) {
@@ -216,21 +234,21 @@ public class Memory {
         }
     }
 
+    //Asigna el estado EXECUTING a los procesos
     private void setExecutingProcess() {
         for (Process process : processes) {
             process.setState(State.EXECUTING);
         }
     }
 
+    //Muestra la tabla de paginas de todos los procesos
     private void showPageTableProcess() {
-
         for (Process proc : processes) {
             System.out.println("\n┌───────────────────────────────┐");
             System.out.println("│    " + proc.getName() + "                  │");
             System.out.println("├───────────────┬───────────────┤");
             System.out.println("│    FRAME      │    PAGINA     │");
             System.out.println("├───────────────┼───────────────┤");
-
             for (int i = 0; i < frames.length; i++) {
                 Frame frame = frames[i];
                 if (!frame.isAvailable()) {
@@ -244,24 +262,20 @@ public class Memory {
         }
     }
 
+    //Muestra el mapeo de direcciones lógicas y físicas por proceso
     private void mapDirections() {
-
-    }
-
-    private void mapDirections1() {
         System.out.println("\n=== MAPEO DE DIRECCIONES FÍSICAS ===");
-        System.out.printf("%-15s%-8s%-20s%-10s%-20s%n", "Proceso", "Frame", "Direccion fisica", "Pagina", "Direccion logica");
+        System.out.printf("%-15s%-8s%-20s%-10s%-20s%n", "Proceso", "Frame", "Dirección física", "Pagina", "Dirección lógica");
 
         for (int i = 0; i < frames.length; i++) {
             Frame frame = frames[i];
             Page page = frame.getPage();
 
+            int[] physicalAddresses = frame.getPhysicalAddresses();
             if (page != null) {
-                int[] physicalAddresses = frame.getPhysicalAddresses();
                 int[] logicalAddresses = page.getLogicalAddresses();
                 String processName = page.getProcess().getName();
 
-                // Primera fila con toda la información
                 System.out.printf("%-15s%-8d%-20d%-10d%-20d%n",
                         processName,
                         i,
@@ -269,7 +283,6 @@ public class Memory {
                         page.getNumberPage(),
                         logicalAddresses[0]);
 
-                // Filas adicionales solo con direcciones
                 int maxLength = Math.max(physicalAddresses.length, logicalAddresses.length);
                 for (int j = 1; j < maxLength; j++) {
                     String physAddr = (j < physicalAddresses.length) ? String.valueOf(physicalAddresses[j]) : "";
@@ -277,8 +290,6 @@ public class Memory {
                     System.out.printf("%-15s%-8s%-20s%-10s%-20s%n", "", "", physAddr, "", logAddr);
                 }
             } else {
-                // Si no hay página asignada
-                int[] physicalAddresses = frame.getPhysicalAddresses();
                 System.out.printf("%-15s%-8d%-20d%-10s%-20s%n", "N/A", i, physicalAddresses[0], "N/A", "N/A");
                 for (int j = 1; j < physicalAddresses.length; j++) {
                     System.out.printf("%-15s%-8s%-20d%-10s%-20s%n", "", "", physicalAddresses[j], "", "");
@@ -288,7 +299,7 @@ public class Memory {
         System.out.println();
     }
 
-
+    //Recupera los procesos
     public ArrayList<Process> getProcesses() {
         return processes;
     }
