@@ -25,7 +25,7 @@ public class ResultadoTraduccion {
         this.mensaje = mensaje;
         this.timestamp = Instant.now()
                 .atZone(ZoneId.systemDefault())
-                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss"));
+                .format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss.SS"));
     }
 
     public int getDireccionLogica() {

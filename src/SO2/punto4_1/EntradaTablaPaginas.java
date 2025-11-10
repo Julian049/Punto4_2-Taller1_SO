@@ -2,7 +2,6 @@ package SO2.punto4_1;
 
 import java.time.Instant;
 
-//Clase pagina
 public class EntradaTablaPaginas {
     private int numeroPagina;
     private int marcoFisico;

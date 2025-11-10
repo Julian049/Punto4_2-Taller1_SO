@@ -54,9 +54,9 @@ public class Main {
 
         System.out.println("Asignando paginas...\n");
         System.out.println("----------------------");
-        simulador.assignarPaginas(entradaTablaPaginas);
+        simulador.asignarPaginas(entradaTablaPaginas);
 
-        simulador.traducirDirecciones(0x3500);
+        simulador.ejecutarSimulador();
 
     }
 }
